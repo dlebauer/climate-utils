@@ -218,7 +218,7 @@ get.vpd <- function(rh, temp){
 ##' @return saturation vapor pressure in mb
 ##' @export
 ##' @author David LeBauer
-##' ##' @examples
+##' @examples
 ##' temp <- -30:30
 ##' plot(temp, get.es(0, temp))
 get.es <- function(temp){
@@ -232,6 +232,7 @@ get.es <- function(temp){
 ##' @param temp T in original equation
 ##' @param dewpoint Td in original 
 ##' @return numeric vector
+##' @export
 ##' @author David LeBauer
 get.rh <- function(T, Td){
   arg <- - L / (Rw * T * Td) * (T - Td)

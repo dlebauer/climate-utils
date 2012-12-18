@@ -18,6 +18,6 @@ temp <- -30:30
 plot(temp, get.es(0, temp))
 }
 \author{
-  David LeBauer ##'
+  David LeBauer
 }
 

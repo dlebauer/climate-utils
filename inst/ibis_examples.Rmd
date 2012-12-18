@@ -1,0 +1,16 @@
+Working with Drivers and Output used by the "Integrated Biosphere Simulator" (IBIS) 
+========================================================
+
+
+```{r echo=FALSE, results='hide', message=FALSE}
+library(ribis)
+setwd("~/R-dev/climate-utils/")
+source(system.file("load-all.R", package = "ribis"))
+```
+
+You can also embed plots, for example:
+
+```{r fig.width=7, fig.height=6}
+par(mfrow = c(4,1), mai = rep(0.25, 4), omi = rep(0.5,4))
+lapply(list(solar, rain, vpd, clay), plotmap)
+```

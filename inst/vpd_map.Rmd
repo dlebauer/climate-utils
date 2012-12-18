@@ -1,0 +1,64 @@
+Global Distribution of Vapor Pressure Deficit 
+========================================================
+
+
+
+```{r load}
+library(ggplot2)
+if(!sessionInfo()$otherPkgs$ggplot2$Version == "0.9.2.1"){
+  install_version("ggplot2", version = "0.9.2.1")
+}
+library(hexbin)
+library(ggmap)
+library(maps)
+library(ribis)
+```
+
+rh <- read.csv("/home/dlebauer/Dropbox/gcs/Water Book/global climate/rh_grid.csv", 
+               header = FALSE)
+temp <- read.csv("/home/dlebauer/Dropbox/gcs/Water Book/global climate/temp_grid.csv", 
+                 header = FALSE)
+rh[rh == -999] <- NA
+temp[temp == -999] <- NA
+
+lon <- rh[1,-1]
+lat <- rh[-1,1]
+rh <- rh[-1, -1]
+temp <- temp[-1, -1]
+vpd <- get.vpd(rh, temp)
+
+wide2long <- function(data.wide, var){
+  colnames(data.wide) <- lon
+  data.wide <- cbind(lat, data.wide)
+  data.long <- melt(data.wide, id = "lat")
+  colnames(data.long) <- c("lat", "lon", var)
+  data.long$lon <- as.numeric(as.character(data.long$lon))
+  return(data.long)
+}
+
+rh.long <- wide2long(data.wide = rh, var = "RH")
+vpd.long <- wide2long(vpd, "VPD")
+temp.long <- wide2long(temp, "Temp")
+
+world <- get_map(c(-180, -60, 180, 60), source = "osm")
+ggmap(world)
+
+country_boundaries <- map_data("world")
+
+ggmap(world) +  geom_tile(data = temp.long, aes(lon, lat, fill = Temp)) +
+  scale_fill_gradient(low="blue", high="red")
+
+ggplot(data = vpd.long, aes(lon, lat)) +
+  geom_density2d(aes(fill = ..layer..))
+  
+scale_fill_gradient(low="blue", high="red") 
+
+ggplot() +  geom_density2d(data = vpd.long, aes(lon, lat, fill = VPD))
+```
+
+You can also embed plots, for example:
+
+```{r fig.width=7, fig.height=6}
+plot(cars)
+```
+

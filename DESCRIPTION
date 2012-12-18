@@ -1,4 +1,4 @@
-Package: climate-utils
+Package: ClimateUtils
 Type: Package
 Title: clim-utils
 Version: 1.0
@@ -19,6 +19,8 @@ Depends:
     ggplot2,
     gridExtra,
     GGally,
-    relaimpo
+    relaimpo,
+    RNCEP
 Collate:
+    'data.R'
     'utils.R'

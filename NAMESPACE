@@ -1,4 +1,5 @@
 export(get.es)
+export(get.rh)
 export(get.vpd)
 export(ibis.hist)
 export(info.ibis.nc)

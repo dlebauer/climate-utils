@@ -1,0 +1,82 @@
+\documentclass{article}
+
+\begin{document}
+\SweaveOpts{concordance=TRUE}
+
+\section*{Getting VPD from RNCEP}
+
+The following code will take a while to download data from NOAA
+
+<<get_rh,echo=FALSE,results=hide>>=
+# gather <- function(var){
+#   ans <- NCEP.gather(variable = var,
+#                      level = "surface",
+#                      months.minmax = c(6,8),
+#                      years.minmax  = c(1982,2012),
+#                      lat.southnorth = c(-60, 60),
+#                      lon.westeast = c(-180, 180),
+#                      reanalysis2 = FALSE,
+#                      return.units = TRUE,
+#                      status.bar = FALSE)
+#   return(ans)
+# }            
+# 
+require(ClimateUtils)
+# temp <-  gather("air.sig995")
+# rh   <-  gather("rhum.sig995")
+# save.image(file="t_rh.Rdata")
+@ 
+
+<<load_data>>=
+
+@
+
+
+<<calc_vpd>>=
+# rh: JJA 6a-6p relative humidity (%)
+# temp get JJA 6a-6p mean temp (C)
+vpd <- get.vpd(rh, temp)
+@
+
+
+\section*{Using CRU-NCEP}
+
+These data were obtained directly from the FetchClimate interface http://research.microsoft.com/en-us/um/cambridge/projects/fetchclimate/app/\#LT
+
+<<cruncep>>=
+
+rh <- read.csv(system.file("inst/extdata/rh_grid.csv", 
+                           package = "ClimateUtils"), 
+               header = FALSE)
+temp <- read.csv(system.file("inst/extdata/temp_grid.csv", 
+                           package = "ClimateUtils"), 
+                 header = FALSE)
+rh[rh == -999] <- NA
+temp[temp == -999] <- NA
+lon <- rh[1,-1]
+lat <- rh[-1,1]
+
+es <- get.es(temp=temp[-1,-1])
+vpd <- get.vpd(rh = rh[-1,-1], temp = temp[-1,-1])
+colnames(vpd) <- lon
+vpd <- cbind(lat, vpd)
+library(reshape)
+vpd.long <- melt(vpd, id = "lat")
+colnames(vpd.long) <- c("lat", "lon", "VPD")
+
+library(ggplot2)
+library(hexbin)
+library(ggmap)
+library(maps)
+world <- get_map(c(-180, -60, 180, 60), source = "osm")
+ggmap(world)
+
+world <- map_data("world")
+
+ggplot(world, aes(long, lat)) + 
+  geom_polygon(data = aes(group = group, fill = vpd))
+
+@
+
+
+\end{document}
