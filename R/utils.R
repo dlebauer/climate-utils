@@ -238,3 +238,25 @@ get.rh <- function(T, Td){
   arg <- - L / (Rw * T * Td) * (T - Td)
   rh <- 100*exp(- L / (Rw * T * Td) * (T - Td))
 }
+
+##' .. content for \description{} (no empty lines) ..
+##'
+##' .. content for \details{} ..
+##' @title Wide to Long
+##' @param data.wide data
+##' @param lat latitude for rows
+##' @param lon longitude for columns
+##' @param var variable being measured
+##' @return data.frame with colnames (lat, lon, var)
+##' @export
+##' @author David LeBauer
+wide2long <- function(data.wide, lat, lon, var){
+  require(reshape)
+  colnames(data.wide) <- lon
+  data.wide <- cbind(lat, data.wide)
+  data.long <- melt(data.wide, id = "lat")
+  colnames(data.long) <- c("lat", "lon", var)
+  data.long$lon <- as.numeric(as.character(data.long$lon))
+  return(data.long)
+}
+

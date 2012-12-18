@@ -21,7 +21,16 @@ The following code will take a while to download data from NOAA
 #   return(ans)
 # }            
 # 
+
+library(ggplot2)
+if(!sessionInfo()$otherPkgs$ggplot2$Version == "0.9.2.1"){
+  install_version("ggplot2", version = "0.9.2.1")
+}
 require(ClimateUtils)
+library(hexbin)
+library(ggmap)
+library(maps)
+
 # temp <-  gather("air.sig995")
 # rh   <-  gather("rhum.sig995")
 # save.image(file="t_rh.Rdata")
@@ -55,27 +64,26 @@ rh[rh == -999] <- NA
 temp[temp == -999] <- NA
 lon <- rh[1,-1]
 lat <- rh[-1,1]
+rh <- rh[-1,-1]
+temp <- temp[-1,-1]
+rh.long <- wide2long(data.wide = rh, lat = lat, lon = lon, var = "RH")
+temp.long <- wide2long(temp, lat, lon, "Temp")
 
-es <- get.es(temp=temp[-1,-1])
-vpd <- get.vpd(rh = rh[-1,-1], temp = temp[-1,-1])
-colnames(vpd) <- lon
-vpd <- cbind(lat, vpd)
-library(reshape)
-vpd.long <- melt(vpd, id = "lat")
-colnames(vpd.long) <- c("lat", "lon", "VPD")
+vpd.long <- get.vpd(rh = rh.long$RH, temp=temp.long$Temp)
 
-library(ggplot2)
-library(hexbin)
+long.data <- cbind(rh.long, 
+                   temp.long$Temp, 
+                   VPD = vpd.long)[-401:-420,] # removed because data at lon = 171.562 causing errors
+# worldmap <- get_map(c(-180, -60, 180, 60), source = "osm")
+# save(worldmap, file = "data/worldmap.RData")
+data(worldmap)
 library(ggmap)
-library(maps)
-world <- get_map(c(-180, -60, 180, 60), source = "osm")
-ggmap(world)
+ggmap(worldmap)
 
 world <- map_data("world")
 
-ggplot(world, aes(long, lat)) + 
-  geom_polygon(data = aes(group = group, fill = vpd))
-
+#ggplot(world, aes(long, lat)) + 
+ggmap(worldmap) + geom_tile(data = long.data, aes(lon, lat, fill = sqrt(VPD)), alpha = 0.65) + guides(fill = guide_legend("VPD", ticks = VPD))
 @
 
 
