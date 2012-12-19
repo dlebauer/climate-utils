@@ -1,3 +1,49 @@
+##' Customized implementation of NCEP.gather from the RNCEP package
+##' @title Gather global data 
+##' @param var variable to gather (see NCEP.gather)
+##' @param lat latitude
+##' @param lon longitude
+##' @param years integer, years to collect data from
+##' @param months integer, months to select 
+##' @param hours currently not implemented
+##' @export
+##' @return data.table with latitude, longitude, and mean variable value at each lat x lon
+##' @author David LeBauer
+gather <- function(var, lat = c(-90, 90), lon = c(-180, 180),
+                   years = c(1982,2012),
+                   months = c(6,8),
+                   hours = c(6,18)){
+  ans <- NCEP.gather(variable = var,
+                     level = "surface",
+                     months.minmax = months,
+                     years.minmax  = years,
+                     lat.southnorth = lat,
+                     lon.westeast = lon,
+                     reanalysis2 = FALSE,
+                     return.units = TRUE,
+                     status.bar = FALSE)
+  return(ans)
+  rm(ans); gc()
+}
+
+
+##' converts NCEP.gather output to data table 
+##' @title Gather global data 
+##' @param ans output from \code{\link{NCEP.gather}} function
+##' @export
+##' @return data.table with latitude, longitude, and mean
+##' @author David LeBauer
+ncep2dt <- function(ans){
+  ans.dt <- data.table(NCEP.array2df(ans))
+  ans.dt2 <- ans.dt[!substr(ans.dt$datetime, 12,13) == "00", 
+                    list(date = ymd(substr(datetime, 1, 10)), 
+                         latitude, longitude, variable1)]
+  ans.dt3 <- ans.dt2[, list(mean = mean(variable1)), by = list(latitude, longitude)] 
+  return(ans.dt3)
+  rm(list = ls())
+  gc()
+}
+##'
 ##' Load IBIS output files 
 ##'
 ##' @title load.ibis.nc 
