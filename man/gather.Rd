@@ -2,7 +2,7 @@
 \alias{gather}
 \title{Gather global data}
 \usage{
-  gather(var, ...)
+  gather(...)
 }
 \arguments{
   \item{...}{arguments passed to

@@ -8,22 +8,13 @@ Maintainer: David LeBauer <dlebauer@illinois.edu>
 Description: code used for exploring / transforming climate data
 License: NCSA / University of Illinois Open Source
 Depends:
-    RNetCDF,
     data.table,
     lubridate,
     maptools,
     maps,
     ggmap,
     hexbin,
-    gstat,
-    fields,
-    xtable,
-    nlme,
-    reporttools,
     ggplot2 (>= 0.9.2.1),
-    gridExtra,
-    GGally,
-    relaimpo,
     RNCEP,
     sp
 Collate:
