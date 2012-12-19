@@ -81,6 +81,23 @@ These data were obtained directly from the FetchClimate interface http://researc
 ##                    VPD = vpd.long)[-401:-420,] # removed because data at lon = 171.562 causing errors
 ## colnames(long.data) <- c("latitude", "longitude", "RH", "T", "VPD")
 ## save(lat, lon, long.data, file = "../data/CRU_VPD.RData")
+
+ans <- list()
+cnt <- 1
+for(i in c(-1, 1)){
+  for(j in c(-1, 1)){
+    
+    ans[[cnt]] <- ClimateUtils::get.ncep.vpd(lat.minmax = c(0, i*90), 
+                           lon.minmax = c(0, j*180), 
+                            years.minmax = c(2011, 2012), 
+                            months.minmax = c(6, 8))
+    cnt <- cnt + 1
+  }
+}
+
+rbind(long.data, )
+
+
 data(CRU_VPD)
 
 ## worldmap <- get_map(c(-180, -60, 180, 60), source = "osm")
