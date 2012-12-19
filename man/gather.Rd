@@ -2,30 +2,25 @@
 \alias{gather}
 \title{Gather global data}
 \usage{
-  gather(var, lat = c(-90, 90), lon = c(-180, 180),
-    years = c(1982, 2012), months = c(6, 8),
-    hours = c(6, 18))
+  gather(var, ...)
 }
 \arguments{
-  \item{var}{variable to gather (see NCEP.gather)}
-
-  \item{lat}{latitude}
-
-  \item{lon}{longitude}
-
-  \item{years}{integer, years to collect data from}
-
-  \item{months}{integer, months to select}
-
-  \item{hours}{currently not implemented}
+  \item{...}{arguments passed to
+  \code{\link{RNCEP::NCEP.gather}}}
 }
 \value{
   data.table with latitude, longitude, and mean variable
   value at each lat x lon
 }
 \description{
+  Gather Global NCEP data
+}
+\details{
   Customized implementation of NCEP.gather from the RNCEP
   package
+}
+\examples{
+gather(var = "rhum.sig995", lat.minmax = c(-10, 10), lon.minmax = c(-10, 10), years.minmax = c(2011, 2012), months.minmax = c(6, 8))
 }
 \author{
   David LeBauer

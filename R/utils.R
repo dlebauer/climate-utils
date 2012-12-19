@@ -1,18 +1,44 @@
+##' VPD Calculator
+##'
+##' Meta-wrapper to calculate climatological mean values of VPD
+##' @title VPD Calculator 
+##' @param ... values passed to \code{\link{RNCEP::NCEP.gather}}, e.g. lat.southnorth,  lon.westeast, years.minmax, months.minmax
+##' @return data table with latitude, longitude, RH, T, and VPD
+##' @author David LeBauer
+##' @examples
+##' get.ncep.vpd(lat.minmax = c(-10, 10), lon.minmax = c(-10, 10), years.minmax = c(2011, 2012), months.minmax = c(6, 8))
+get.ncep.vpd <- function(...){
+  temp <- gather(var = "air.sig995", ...) 
+  rh   <-  gather(var = "rhum.sig995", ...)
+
+  rh.dt <- ncep2dt(rh)[,list(latitude, longitude, 
+                             RH = mean, 
+                             id = 1:length(latitude))]
+  temp.dt <- ncep2dt(temp)[,list(latitude, longitude, 
+                                 T = mean, 
+                                 id = 1:length(latitude))]
+  setkey(rh.dt, id)
+  setkey(temp.dt, id)
+  
+  long.data <- rh.dt[temp.dt,
+                     ][, list(latitude, longitude, RH, T,
+                              VPD = get.vpd(RH, T - 272.15)), 
+                       by = id]
+  return(long.data)
+}
+
+
+##' Gather Global NCEP data
+##'
 ##' Customized implementation of NCEP.gather from the RNCEP package
 ##' @title Gather global data 
-##' @param var variable to gather (see NCEP.gather)
-##' @param lat latitude
-##' @param lon longitude
-##' @param years integer, years to collect data from
-##' @param months integer, months to select 
-##' @param hours currently not implemented
+##' @param ... arguments passed to \code{\link{RNCEP::NCEP.gather}}
 ##' @export
 ##' @return data.table with latitude, longitude, and mean variable value at each lat x lon
 ##' @author David LeBauer
-gather <- function(var, lat = c(-90, 90), lon = c(-180, 180),
-                   years = c(1982,2012),
-                   months = c(6,8),
-                   hours = c(6,18)){
+##' @examples
+##' gather(var = "rhum.sig995", lat.minmax = c(-10, 10), lon.minmax = c(-10, 10), years.minmax = c(2011, 2012), months.minmax = c(6, 8))
+gather <- function(var, ...){
   ans <- NCEP.gather(variable = var,
                      level = "surface",
                      months.minmax = months,
@@ -25,7 +51,6 @@ gather <- function(var, lat = c(-90, 90), lon = c(-180, 180),
   return(ans)
   rm(ans); gc()
 }
-
 
 ##' converts NCEP.gather output to data table 
 ##' @title Gather global data 
@@ -43,7 +68,8 @@ ncep2dt <- function(ans){
   rm(list = ls())
   gc()
 }
-##'
+
+
 ##' Load IBIS output files 
 ##'
 ##' @title load.ibis.nc 
