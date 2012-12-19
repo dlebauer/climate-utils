@@ -19,15 +19,29 @@ world <- map_data("world")
 ##                          years = c(1982,2012),
 ##                          months = c(6,8))
 ## save(long.data, file = "data/NCEP_RH_T.RData")
-data(NCEP_RH_T)
+data(NCEP_VPD)
 
-vpdtiles <-    ggmap(worldmap) + 
-  geom_tile(data = long.data, aes(longitude, latitude, fill = VPD), alpha = 0.65) +
-  geom_text(data = long.data, aes(longitude, latitude, label = round(VPD))) + 
-  ggtitle(label = "NCEP summer daytime VPD")
+library(proj4)
+robinson <- project(cbind(long.data$longitude - 180, long.data$latitude), proj = "+proj=robin +lon_0=0 +x_0=0 +y_0=0 +ellps=WGS84 +datum=WGS84 +units=m +no_defs")
+
+long.data <- long.data[, list(id = rank((latitude+90)*1000 + (longitude)), latitude, 
+                              longitude = ifelse(longitude <= 180, 
+                                                 longitude, 
+                                                 longitude - 360), 
+                              RH, T, VPD)]
+long.data <- long.data[!duplicated(id),]
+
+subset.data <- long.data[latitude %% 2.5 == 0 & longitude %% 2.5 == 0,]
+
+ncep.map <- ggplot(data = long.data, aes(longitude, latitude)) + 
+  geom_tile(aes(longitude, latitude, fill = log(VPD))) +
+  guides(fill = "none") +              
+  ggtitle(label = "NCEP summer daytime VPD") + 
+  geom_path(data = world, aes(long, lat, group = group)) + 
+  geom_text(data = subset.data, aes(longitude, latitude, label = round(VPD)), size = 2) 
 
 pdf(file = "NCEP_VPD.pdf", height = 18, width = 24)
-vpdmap
+ncep.map #+ coord_map("mercator")
 dev.off()
 ### finished editing NCEP_VPD worldmap
 
