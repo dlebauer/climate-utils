@@ -21,8 +21,8 @@ world <- map_data("world")
 ## save(long.data, file = "data/NCEP_RH_T.RData")
 data(NCEP_VPD)
 
-library(proj4)
-robinson <- project(cbind(long.data$longitude - 180, long.data$latitude), proj = "+proj=robin +lon_0=0 +x_0=0 +y_0=0 +ellps=WGS84 +datum=WGS84 +units=m +no_defs")
+# library(proj4)
+#robinson <- project(cbind(long.data$longitude - 180, long.data$latitude), proj = "+proj=robin +lon_0=0 +x_0=0 +y_0=0 +ellps=WGS84 +datum=WGS84 +units=m +no_defs")
 
 long.data <- long.data[, list(id = rank((latitude+90)*1000 + (longitude)), latitude, 
                               longitude = ifelse(longitude <= 180, 
@@ -36,7 +36,7 @@ subset.data <- long.data[latitude %% 2.5 == 0 & longitude %% 2.5 == 0,]
 ncep.map <- ggplot(data = long.data, aes(longitude, latitude)) + 
   geom_tile(aes(longitude, latitude, fill = log(VPD))) +
   guides(fill = "none") +              
-  ggtitle(label = "NCEP summer daytime VPD") + 
+  ggtitle(label = "NCEP summer 24 hour mean VPD") + 
   geom_path(data = world, aes(long, lat, group = group)) + 
   geom_text(data = subset.data, aes(longitude, latitude, label = round(VPD)), size = 2) 
 
@@ -109,8 +109,6 @@ for(i in c(-1, 1)){
   }
 }
 
-rbind(long.data, )
-
 
 data(CRU_VPD)
 
@@ -130,5 +128,25 @@ dev.off()
 
 @
 
+\section{Comparing 24 hour summer with winter daytime VPDs}
+
+<<>>=
+
+
+load("test.RData")
+
+vpd_diff_plot <- test[,ggplot(data = test, aes(longitude, latitude, fill = I(VPDnew-VPD))) + geom_tile() +  geom_text(label = I(round((VPDnew-VPD))), size = 2) + ggtitle("change in VPD \n VPD = daytime winter (JJA VPD)\n VPDnew = 24 hour summer (DJF VPDnew)") ]
+
+vpd_diff_plot
+
+new_vpd_plot <- test[,ggplot(data = test, aes(longitude, latitude, fill = VPDnew)) + geom_tile() +  geom_text(label = round(VPDnew), size = 2) + ggtitle("VPDnew = 24 hour summer (DJF)") ]
+
+
+pdf(file = "newVPDchanges.pdf", height = 12, width = 18)
+print(new_vpd_plot)
+print(vpd_diff_plot)
+dev.off()
+
+@
 
 \end{document}
