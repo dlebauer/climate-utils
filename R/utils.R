@@ -58,7 +58,7 @@ gather <- function(...){
 ##' @author David LeBauer
 ncep2dt <- function(ans){
   ans.dt <- data.table(NCEP.array2df(ans))
-  ans.dt2 <- ans.dt[!substr(ans.dt$datetime, 12,13) == "00", 
+  ans.dt2 <- ans.dt[,#!substr(ans.dt$datetime, 12,13) == "00", 
                     list(date = ymd(substr(datetime, 1, 10)), 
                          latitude, longitude, variable1)]
   ans.dt3 <- ans.dt2[, list(mean = mean(variable1)), by = list(latitude, longitude)] 
