@@ -20,7 +20,7 @@
   package
 }
 \examples{
-gather(var = "rhum.sig995", lat.minmax = c(-10, 10), lon.minmax = c(-10, 10), years.minmax = c(2011, 2012), months.minmax = c(6, 8))
+gather(var = "rhum.sig995", lat.southnorth = c(-10, 10), lon.westeast = c(-10, 10), years.minmax = c(2011, 2012), months.minmax = c(6, 8))
 }
 \author{
   David LeBauer
