@@ -46,7 +46,7 @@ dev.off()
 ### finished editing NCEP_VPD worldmap
 
 require(sp)
-rh.sp <- rh.df
+rh.sp <- rh.dt
 coordinates(rh.sp) <- ~ latitude + longitude
 gridded(rh.sp) <- TRUE
 proj4string(rh.sp) <- CRS('+proj=longlat + datum=WGS84')
@@ -122,8 +122,8 @@ vpdtiles <- ggmap(worldmap) +
   ggtitle(label = "CRU summer daytime VPD")
 
 
-pdf(file = "CRU_VPD.pdf", height = 18, width = 24)
-vpdmap
+pdf(file = "inst/CRU_VPD.pdf", height = 18, width = 24)
+vpdtiles
 dev.off()
 
 @
