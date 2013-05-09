@@ -30,7 +30,14 @@ This function is a wrapper for the `NCEP.gather` function (from the RNCEP packag
 1. downloads relative humidity and temperature from NCEP
 2. calculates VPD using the `get.es` and `get.vpd` functions 
 
-See `?get.ncep.vpd`, `?get.es`, and `?get.vpd` for details
+These functions use the following equations:
+
+* *es* saturation vapor pressure 
+   $$\mathrm{es} = 6.11 * \exp((2.5\times 10^6 / 461) * (1 / 273 - 1 / (273 + \mathrm{temp})))$$
+* *VPD* vapor pressure deficit
+   $$\mathrm{vpd} <- ((100 - \mathrm{rh}) / 100) * \mathrm{es}$$
+
+See `?get.ncep.vpd`, `?get.es`, and `?get.vpd` for details. (source code for calculating es and vpd are in the R/utils.R file)
 
 
 #### Plot VPD 
