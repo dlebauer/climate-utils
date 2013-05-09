@@ -14,9 +14,11 @@ Depends:
     maps,
     ggmap,
     hexbin,
-    ggplot2 (>= 0.9.2.1),
+    ggplot2,
     RNCEP,
     sp
 Collate:
     'data.R'
     'utils.R'
+    'ibis_utils.R'
+    'ncep_utils.R'

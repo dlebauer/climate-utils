@@ -3,14 +3,298 @@ Working with Drivers and Output used by the "Integrated Biosphere Simulator" (IB
 
 
 ```{r echo=FALSE, results='hide', message=FALSE}
-library(ribis)
-setwd("~/R-dev/climate-utils/")
-source(system.file("load-all.R", package = "ribis"))
+library(knitr)
+opts_chunk$set(echo = FALSE, message = FALSE, results='hide', cache=TRUE)
+theme_set(theme_bw())
 ```
 
-You can also embed plots, for example:
 
 ```{r fig.width=7, fig.height=6}
+
+options(digits = 4)
+## Model output files *.aet, *.npp
+corn.aet <- load.ibis.nc(filename = system.file("extdata/vanloocke2012rcw/corn/aet.nc", package = "ribis"), var = "aet", spp = "Corn")
+corn.npp <- load.ibis.nc(filename = system.file("extdata/vanloocke2012rcw/corn/npptot.nc", package = "ribis"), var = "npptot", spp = "Corn")
+mxg.aet  <- load.ibis.nc(filename = system.file("extdata/vanloocke2012rcw/miscanthus/aet.nc", package = "ribis"), var = "aet", spp = "Miscanthus")
+mxg.npp  <- load.ibis.nc(filename = system.file("extdata/vanloocke2012rcw/miscanthus/npptot.nc", package = "ribis"), var = "npptot", spp = "Miscanthus")
+pavi.aet <- load.ibis.nc(filename = system.file("extdata/vanloocke2012rcw/switchgrass/aet.nc", package = "ribis"), var = "aet", spp = "Switchgrass")
+pavi.npp <- load.ibis.nc(filename = system.file("extdata/vanloocke2012rcw/switchgrass/npptot.nc", package = "ribis"), var = "npptot", spp = "Switchgrass")
+pavi.yield <- load.ibis.nc(filename = system.file("extdata/vanloocke2012rcw/yield.nc", package = "ribis"), var = "switchgrass", spp = "Switchgrass", FUN=mean)
+corn.yield <- load.ibis.nc(filename = system.file("extdata/vanloocke2012rcw/yield.nc", package = "ribis"), var = "corn", spp = "Corn", FUN=mean)
+mxg.yield <- load.ibis.nc(filename = system.file("extdata/vanloocke2012rcw/yield.nc", package = "ribis"), var = "miscanthus", spp = "Miscanthus", FUN=mean)
+
+corn.npp$labels$xlab <- 
+  pavi.npp$labels$xlab <- 
+  mxg.npp$labels$xlab <-  "NPP kg/m2/y"
+corn.aet$labels$xlab <- 
+  pavi.aet$labels$xlab <- 
+  mxg.aet$labels$xlab <-  "ET mm/y"
+corn.yield$labels$xlab <- 
+  pavi.yield$labels$xlab <- 
+  mxg.yield$labels$xlab <-  "Mg/ha"
+
+## Model driver files are rain.nc, rh.nc, solar.nc, and temp.nc
+rain     <- load.ibis.nc(filename = system.file("extdata/vanloocke2012rcw/drivers/rain.nc", package = "ribis"), var = "rain")
+rain$labels$xlab <- "Mean Annual Precipitation"
+rain$labels$xlab <- "mm / y"
+
+solar    <- load.ibis.nc(filename = system.file("extdata/vanloocke2012rcw/drivers/solar.nc", package = "ribis"), var = "solar", FUN = sum)
+solar$labels$xlab = "kW/m2"
+solar$labels$main <- "Annual Incident Solar Radiation"
+solar$vect <- solar$vect / 1000
+solar$grid_data$z <- solar$grid_data$z / 1000
+
+
+
+## Soil Drivers
+clay.nc <- open.nc(system.file("extdata/vanloocke2012rcw/drivers/soita.clay.nc", package = "ribis"))
+
+sand.nc <- open.nc(system.file("extdata/vanloocke2012rcw/drivers/soita.sand.nc", package = "ribis"))
+
+sand <- var.get.nc(sand.nc, "sandpct")
+clay <- var.get.nc(clay.nc, "claypct")
+
+lat <- var.get.nc(sand.nc, "latitude")
+lon <- var.get.nc(sand.nc, "longitude")
+minY <- 37
+maxY <- 46
+minX <- -104.25
+maxX <- -80.25
+keep.lat <- which(lat >= minY & lat <= maxY)
+keep.lon <- which(lon >= minX & lon <= maxX)
+coords <- expand.grid(x = lon[keep.lon], y = lat[keep.lat])
+sand.subset <- apply(sand[keep.lon, keep.lat, 1:4], 
+                     MARGIN = c(1,2), FUN = mean) #1:4 is first 100cm
+clay.subset <- apply(clay[keep.lon, keep.lat, 1:4],
+                     MARGIN = c(1,2), FUN = mean)
+sand.vect <- as.vector(sand.subset)
+clay.vect <- as.vector(clay.subset)
+
+clay.array <- data.frame(coords, clay.vect)
+clay <- list(vect = clay.vect, 
+             coords = list(-80.25, -104.25, 46, 37),
+             grid_data = xyz2img(clay.array, tolerance = 0.01),
+             labels = list(xlab = "% Clay", 
+               main = "Soil Clay Content", 
+               map.xlab = "longitude", 
+               map.ylab = "longitude"))
+             
+
+## Calculate VPD
+
+rh       <- load.ibis.nc(filename = system.file("extdata/vanloocke2012rcw/drivers/rh.nc", package = "ribis"), var = "rh", FUN = "mean", date.range = "summer")
+temp       <- load.ibis.nc(filename = system.file("extdata/vanloocke2012rcw/drivers/temp.nc", package = "ribis"), var = "temp", FUN = "mean", date.range = "summer")
+
+vpd.vect <- get.vpd(rh$vect, temp$vect)
+vpd.array <- data.frame(coords, vpd.vect) 
+vpd <- list(vect = vpd.vect,
+            coords = list(-80.25, -104.25, 46, 37),
+            grid_data = xyz2img(vpd.array, tolerance = 0.01),
+            labels = list(xlab = "mean summer VPD (mb)",
+              main = "VPD",
+              map.xlab = "longitude",
+              map.ylab = "longitude"))
+## Now make some useful data structures for analysis
+ibis.out <- list(corn.aet = corn.aet, corn.npp = corn.npp,corn.yield = corn.yield, 
+                 mxg.aet = mxg.aet, mxg.npp = mxg.npp, mxg.yield = mxg.yield,
+                 pavi.aet = pavi.aet, pavi.npp = pavi.npp, pavi.yield = pavi.yield,
+                 solar = solar, rain = rain, clay = clay, vpd = vpd)
+
+
+vars <- names(ibis.out)
+lonlat <- expand.grid(x = rain$grid_data$x, y = rain$grid_data$y)
+predictors <- cbind(lonlat, 
+                    rain = rain$vect,
+                    vpd  = vpd$vect,
+                    solar = solar$vect, 
+                    clay = clay.vect,
+                    sand = sand.vect)
+
+
+### WUE
+
+
+mxg.wue <- list(vect = 1000 / (mxg.aet$vect / mxg.yield$vect),
+                grid_data = list(
+                  x =  mxg.aet$grid_data$x,
+                  y =  mxg.aet$grid_data$y,
+                  z = 1000 / (mxg.aet$grid_data$z/mxg.yield$grid_data$z)),
+                coords = mxg.yield$coords,
+                labels = list(xlab = "WUE kg ha-1 mm-1",
+                  main = "Miscanthus WUE",
+                  map.xlab = "longitude", 
+                                map.ylab = "longitude",
+                                spp = "Miscanthus"))
+pavi.wue <- list(vect = 1000 / (pavi.aet$vect / pavi.yield$vect),
+                 grid_data = list(
+                   x = pavi.aet$grid_data$x,
+                   y = pavi.aet$grid_data$y,
+                   z = 1000 / (pavi.aet$grid_data$z/pavi.yield$grid_data$z)),
+                 coords = pavi.yield$coords,
+                 labels = list(xlab = "WUE kg ha-1 mm-1",
+                   main = "Switchgrass WUE",
+                   map.xlab = "longitude", 
+                   map.ylab = "longitude",
+                   spp = "Switchgrass"))
+corn.wue <- list(vect = 1000 / (corn.aet$vect / corn.yield$vect),
+                 grid_data = list(
+                   x = corn.aet$grid_data$x,
+                   y = corn.aet$grid_data$y,
+                   z = 1000 / (corn.aet$grid_data$z/corn.yield$grid_data$z)),
+                 coords = corn.yield$coords,
+                 labels = list(xlab = "kg ha-1 mm-1",
+                   main = "Corn WUE",
+                   map.xlab = "longitude", 
+                   map.ylab = "longitude",
+                   spp = "Corn"))
+
+
+pavi <- cbind(aet = pavi.aet$vect, npp = pavi.npp$vect, yield = pavi.yield$vect, pavi.wue$vect, predictors)
+mxg  <- cbind(aet = mxg.aet$vect,  npp = mxg.npp$vect,  yield = mxg.yield$vect, mxg.wue$vect, predictors)
+corn <- cbind(aet = corn.aet$vect, npp = corn.npp$vect, yield = corn.yield$vect, corn.wue$vect, predictors)
+
+all  <- cbind(pavi.aet = pavi.aet$vect, 
+              mxg.aet = mxg.aet$vect, 
+              corn.aet = corn.aet$vect,
+              pavi.npp = pavi.npp$vect, 
+              mxg.npp = mxg.npp$vect, 
+              corn.npp = corn.npp$vect,
+              pavi.yield = pavi.yield$vect, 
+              mxg.yield = mxg.yield$vect, 
+              corn.yield = corn.yield$vect,
+              pavi.wue = pavi.wue$vect, 
+              mxg.wue = mxg.wue$vect, 
+              corn.wue = corn.wue$vect,
+              predictors)
+
+
+## like 'all' but with species as a dummy variable
+all.long  <- rbind(cbind(sp = "pavi", 
+                         aet = pavi.aet$vect, 
+                         npp = pavi.npp$vect,
+                         yield = pavi.yield$vect,
+                         wue = pavi.wue$vect, 
+                         predictors),
+                   cbind(sp = "mxg", 
+                         aet = mxg.aet$vect, 
+                         npp = mxg.npp$vect,
+                         yield = mxg.yield$vect,
+                         wue = mxg.wue$vect, 
+                         predictors),
+                   cbind(sp = "corn", 
+                         aet = corn.aet$vect, 
+                         npp = corn.npp$vect,
+                         yield = corn.yield$vect,
+                         wue = corn.wue$vect, 
+                         predictors))
+
+
+## Truncate data to that used in VanLoocke paper
+all <- transform(all, lat = x, lon = y)
+all.long <- transform(all.long, lat = x, lon = y)
+all <-      subset(all,
+                   x <= -80.25 & x >= -104.25 & y <= 46 & y >= 37 & !is.na(rain),
+                   select = which(!colnames(all) %in% c("x", "y")))
+all.long <- subset(all.long,
+                   x <= -80.25 & x >= -104.25 & y <= 46 & y >= 37 & !is.na(rain),
+                   select = which(!colnames(all.long) %in% c("x", "y")))
+
+### Map Colors
+
+wbgyr <- rgb(read.csv(system.file("wh-bl-gr-ye-re.csv", package = "ClimateUtils")), 
+             maxColorValue = 255)[30:198]
+
 par(mfrow = c(4,1), mai = rep(0.25, 4), omi = rep(0.5,4))
-lapply(list(solar, rain, vpd, clay), plotmap)
+lapply(list(rain, vpd, clay), plotmap)
+
+```
+
+
+
+### Extracting Drivers from IBIS Output
+
+```{r get-ibis-drivers}
+
+rain.nc <- system.file("extdata/vanloocke2012rcw/drivers/rain.nc", package = "ClimateUtils")
+rain <- open.nc(rain.nc)
+
+
+
+lat <- var.get.nc(rain, "latitude")
+lon <- var.get.nc(rain, "longitude")
+time <- var.get.nc(rain, "time")
+date <- as.Date("1790-12-31") + days(time)
+summer <- month(date) %in% 6:8
+
+## Precipitation
+precip <- var.get.nc(rain, "rain")
+summer.precip <- precip[ , , summer]
+### Temp
+temp.nc <- system.file("extdata/vanloocke2012rcw/drivers/temp.nc", package = "ribis")
+.temp <- open.nc(temp.nc)
+temp <- var.get.nc(.temp, "temp")
+summer.temp <- temp[ , , summer]
+
+### RH
+rh.nc <- system.file("extdata/vanloocke2012rcw/drivers/rh.nc", package = "ribis")
+.rh <- open.nc(rh.nc)
+rh <- var.get.nc(.rh, "rh")
+summer.rh <- rh[ , , summer]
+
+### Clay
+clay.nc <- system.file("extdata/vanloocke2012rcw/drivers/soita.clay.nc", package = "ribis")
+clay <- open.nc(clay.nc)
+claylat <- var.get.nc(clay, "latitude")
+claylon <- var.get.nc(clay, "longitude")
+claypct <- var.get.nc(clay, 'claypct')
+claypct <- apply(claypct, MARGIN = c(1,2), FUN = function(x) mean(x, na.rm = TRUE))
+
+```
+
+```{r ibis-site-subset, eval=FALSE}
+
+ibis.sites <- cbind(sites, 
+                    ib.temp = NA, ib.rh = NA, 
+                    ib.clay =NA, ib.precip = NA, )
+get.ib.met <- function(site){
+  clay <- temp <- rh <- precip <- NA
+  y <- site$year
+  intime <- y > min(year(date)) & y < max(year(date))
+  .lat <- site$lat
+  .lon <- site$lon
+  inrange <- .lat > min(lat) & .lat < max(lat) & .lon > min(lon) & .lon < max(lon)
+  
+  inclayrange <- .lat > min(claylat) & .lat < max(claylat) &
+    .lon > min(claylon) & .lon < max(claylon)
+  
+  if(intime){
+    if(inrange){
+      year.idx <- year(date[summer]) == y      
+      lat.idx <- which.min(abs(site$lat - lat))
+      lon.idx <- which.min(abs(site$lon - lon))
+      temp <- mean(summer.temp[lon.idx, lat.idx, year.idx])
+      rh <- mean(summer.rh[lon.idx, lat.idx, year.idx])
+      precip <- sum(summer.precip[lon.idx, lat.idx, year.idx] * c(30, 31, 31))  
+      }
+    if(inclayrange){
+      claylon.idx <- which.min(abs(claylon - site$lon))
+      claylat.idx <- which.min(abs(claylat-site$lat))
+      clay   <- claypct[claylon.idx, claylat.idx]
+      }
+    }
+  return(data.frame(temp = temp, rh = rh, precip = precip, clay = clay))
+  }
+
+for(i in 1:nrow(ibis.sites)){
+  site <- ibis.sites[i,]
+  ibmet <- get.ib.met(site)
+  
+  ibis.sites$ib.temp[i] <- ibmet$temp
+  ibis.sites$ib.rh[i] <- ibmet$rh
+  ibis.sites$ib.precip[i] <- ibmet$precip
+  ibis.sites$ib.clay[i] <- ibmet$clay
+}
+
+write.csv(ibis.sites, "data/sites_climate_ibis.csv", row.names = FALSE)
+
 ```
